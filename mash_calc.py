@@ -16,10 +16,13 @@ def round_num(num):
     return round(num, 2)
 
 def calculate_water_absorbed(lbs_grain):
+    """
+    Returns gallons absorbed by dry grain weight given.
+    """
     return lbs_grain * GRAIN_ABSORPTION_GAL_PER_LB
 
 
-def calculate_strike_temp(desired_temp, tun_temp, grain_weight, grain_temp, gallons_water):
+def calculate_strike_temp(desired_temp, tun_temp, dry_grain_weight, grain_temp, gallons_water):
     """
     Returns the temperature of water required to make the mash finalize at desired_temp
 
@@ -34,7 +37,7 @@ def calculate_strike_temp(desired_temp, tun_temp, grain_weight, grain_temp, gall
     c1 = MY_MASH_TUN_SPECIFIC_HEAT
     t1 = tun_temp
 
-    m2 = grain_weight
+    m2 = dry_grain_weight
     c2 = GRAIN_SPECIFIC_HEAT
     t2 = grain_temp
 
@@ -50,18 +53,18 @@ def calculate_strike_temp(desired_temp, tun_temp, grain_weight, grain_temp, gall
     return t3
 
 
-def calculate_sparge_temp(desired_temp, settled_mash_temp, grain_weight, gallons_water):
+def calculate_sparge_temp(desired_temp, settled_mash_temp, dry_grain_weight, gallons_water):
     td = desired_temp
 
     m1 = MY_MASH_TUN_WEIGHT
     c1 = MY_MASH_TUN_SPECIFIC_HEAT
     t1 = settled_mash_temp
 
-    m2 = grain_weight
+    m2 = dry_grain_weight
     c2 = GRAIN_SPECIFIC_HEAT
     t2 = settled_mash_temp
 
-    m3 = calculate_water_absorbed(grain_weight)
+    m3 = calculate_water_absorbed(dry_grain_weight) * WATER_LB_PER_GAL_AT_150F
     c3 = WATER_SPECIFIC_HEAT
     t3 = settled_mash_temp
 
@@ -149,7 +152,7 @@ class BatchSpageCalculatorWindow(Gtk.Window):
 
     def recalculate(self, widget=None):
         grist_ratio = self.grist_ratio.get_value()
-        grain_weight = self.grain_bill_lb.get_value()
+        dry_grain_weight = self.grain_bill_lb.get_value()
         initial_grain_temp = self.initial_grain_temp.get_value()
         empty_tun_temp = self.empty_tun_temp.get_value()
         target_mash_temp = self.target_mash_temp.get_value()
@@ -157,17 +160,17 @@ class BatchSpageCalculatorWindow(Gtk.Window):
         target_sparge_temp = self.target_sparge_temp.get_value()
 
         # do the math
-        strike_water_required = ( grain_weight * grist_ratio ) / 4 # div by 4 to convert qt. to gal
-        grain_absorption_gals = calculate_water_absorbed(grain_weight)
+        strike_water_required = ( dry_grain_weight * grist_ratio ) / 4 # div by 4 to convert qt. to gal
+        grain_absorption_gals = calculate_water_absorbed(dry_grain_weight)
         sparge_water_required = (gal_into_boil - strike_water_required) + grain_absorption_gals
 
         strike_water_temp = calculate_strike_temp(
-            target_mash_temp, empty_tun_temp, grain_weight, initial_grain_temp, strike_water_required
+            target_mash_temp, empty_tun_temp, dry_grain_weight, initial_grain_temp, strike_water_required
         )
 
         # assume we hit the target mash temp, so now that's used in the calculations
         sparge_water_temp = calculate_sparge_temp(
-            target_sparge_temp, target_mash_temp, grain_weight, sparge_water_required
+            target_sparge_temp, target_mash_temp, dry_grain_weight, sparge_water_required
         )
 
         self.calculated_strike_water.set_text(
