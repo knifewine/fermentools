@@ -17,7 +17,7 @@ Similar function to mash_calc.py but much less cool. Source code may encourage h
 Requires zenity but could easily be modified to take paramters directly from the command line if you have something against zenity.
 Relies on some bash commands that you probably already have.
 
-abv_calch.sh
+abv_calc.sh
 ------------
 Simple, command-line abv calculator using the more complex calculation method which should yield more accurate calculations for higher gravity beers.
 
